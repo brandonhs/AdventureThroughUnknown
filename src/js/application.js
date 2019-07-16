@@ -66,6 +66,14 @@ var Player = {
     x: 0,
     y: 100,
 
+    gravity_force: 0.25,
+    gravity_speed: 0,
+    max_gravity_speed: 25,
+
+    jump_force: 0.35,
+    jump_speed: 0,
+    isJumping: false,
+
     move_speed: 4,
 
     vel: {
@@ -131,19 +139,20 @@ var Player = {
             KeyInputEvents.keyReleased = null;
         }
 
-        if (KeyInputEvents.keysPressed[38]) {
-            Player.vel.y = -Player.move_speed;
-        } else if (KeyInputEvents.keyReleased == 38) {
-            Player.vel.y = 0;
-            KeyInputEvents.keyReleased = null;
+        Player.gravity_speed += Player.gravity_force;
+        Player.vel.y = Player.gravity_speed;
+        if (Player.gravity_speed > Player.max_gravity_speed) {
+            Player.gravity_speed = Player.max_gravity_speed;
         }
 
-        if (KeyInputEvents.keysPressed[40]) {
-            Player.vel.y = Player.move_speed;
-        } else if (KeyInputEvents.keyReleased == 40) {
-            Player.vel.y = 0;
+        /*if (KeyInputEvents.keysPressed[38]) {
+            Player.jump_speed += Player.jump_force;
+            Player.vel.y = Player.jump_speed;
+            Player.isJumping = true;
+        } else if (KeyInputEvents.keyReleased == 38) {
             KeyInputEvents.keyReleased = null;
-        }
+            Player.isJumping = false;
+        }*/
 
         var oldX = Player.x;
         var oldY = Player.y;
@@ -152,9 +161,11 @@ var Player = {
         Player.x += Player.vel.x;
         Player.y += Player.vel.y;
 
-        if (Player.detectCollsion(Game.wall)) {
-            Player.x = oldX;
-            Player.y = oldY;
+        for (var i = 0; i < Game.walls.length; i++) {
+            if (Player.detectCollsion(Game.walls[i])) {
+                Player.x -= Player.x - oldX;
+                Player.y -= Player.y - oldY;
+            }
         }
 
         // Animations
@@ -180,7 +191,6 @@ var Player = {
     },
 
     detectCollsion: function(other) {
-        console.log(other.width, other.height);
         return Player.x + Player.width > other.x && Player.x < other.x + other.width
             && Player.y + Player.height > other.y && Player.y + 24 < other.y + other.height;
     }
@@ -190,7 +200,7 @@ var Game = {
     canvas: null,
     ctx: null,
 
-    wall: null,
+    walls: [],
 
     init: function() {
     },
@@ -199,7 +209,7 @@ var Game = {
         Game.canvas = document.getElementById('game_screen');
         Game.ctx = Game.canvas.getContext('2d');
 
-        Game.wall = new GameObject(70, 100, 50, 50);
+        Game.walls.push(new GameObject(70, 100, 50, 50), new GameObject(400, 100, 80, 50));
 
         Player.init();
 
@@ -213,7 +223,9 @@ var Game = {
 
         Game.ctx.clearRect(0, 0, Game.canvas.width, Game.canvas.height);
 
-        Game.wall.draw(Game.ctx);
+        for (var i = 0; i < Game.walls.length; i++) {
+            Game.walls[i].draw(Game.ctx);
+        }
 
         Player.update();
     }
