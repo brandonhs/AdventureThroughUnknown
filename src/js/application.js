@@ -66,13 +66,12 @@ var Player = {
     x: 0,
     y: 100,
 
-    gravity_force: 0.25,
+    gravity_force: 0.35,
     gravity_speed: 0,
     max_gravity_speed: 25,
 
-    jump_force: -0.35,
-    jump_speed: 0,
     isJumping: false,
+    isGrounded: false,
     canJump: false,
 
     move_speed: 4,
@@ -140,20 +139,45 @@ var Player = {
             KeyInputEvents.keyReleased = null;
         }
 
-        Player.gravity_speed += Player.gravity_force;
-        Player.vel.y = Player.gravity_speed;
-        if (Player.gravity_speed > Player.max_gravity_speed) {
-            Player.gravity_speed = Player.max_gravity_speed;
+        if (!Player.isJumping) {
+            Player.gravity_speed += Player.gravity_force;
+            Player.vel.y = Player.gravity_speed;
+            if (Player.gravity_speed > Player.max_gravity_speed) {
+                Player.gravity_speed = Player.max_gravity_speed;
+            }
         }
 
         if (KeyInputEvents.keysPressed[38] && Player.canJump) {
-            Player.jump_speed += Player.jump_force;
-            Player.vel.y = Player.jump_speed;
             Player.canJump = false;
+            Player.isGrounded = false;
             Player.isJumping = true;
-        } else if (KeyInputEvents.keyReleased == 38) {
+            Player.vel.y = -10.5;
+        }
+
+        if (!KeyInputEvents.keysPressed[38]) {
+            if (Player.isGrounded) {
+                Player.canJump = true;
+            } else if (Player.vel.y < 0) {
+                // TODO jump stops abruptly fix this
+                //! Player.isJumping = false;
+            }
+        }
+
+        if (KeyInputEvents.keyReleased == 38) {
             KeyInputEvents.keyReleased = null;
-            Player.isJumping = false;
+        }
+
+        if (Player.isJumping) {
+            Player.vel.y += Player.gravity_force;
+            console.log(Player.vel.y);
+        }
+
+        if (Player.vel.x > 0 && !KeyInputEvents.keysPressed[39]) {
+            Player.vel.x = 0;
+        }
+
+        if (Player.vel.x < 0 && !KeyInputEvents.keysPressed[37]) {
+            Player.vel.x = 0;
         }
 
         // Movement Update
@@ -163,6 +187,8 @@ var Player = {
         for (var i = 0; i < Game.walls.length; i++) {
             if (Player.handleCollision(Game.walls[i])) {
                 // collision
+            } else {
+                // no collsion
             }
         }
 
@@ -188,6 +214,10 @@ var Player = {
         }
     },
 
+    /**
+     * returns true if collision with other is detected
+     * @param {GameObject} other 
+     */
     handleCollision: function(other) {
         // left
         if (Player.x + Player.width > other.x && Player.y + Player.height > other.y && Player.y < other.y + other.height && Player.x + Player.width < other.x + 5) {
@@ -205,18 +235,17 @@ var Player = {
         if (Player.y + Player.height > other.y && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + 24 < other.y) {
             Player.y = other.y - Player.height;
             Player.gravity_speed = 0;
-            Player.canJump = true;
+            Player.isJumping = false;
+            Player.isGrounded = true;
             return true;
         }
 
         // bottom
         if (Player.y + 24 < other.y + other.height && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + Player.height > other.y + other.height) {
             Player.y = other.y + other.height - 24;
+            Player.isJumping = false;
             return true;
         }
-
-        //return Player.x + Player.width > other.x && Player.x < other.x + other.width
-        //    && Player.y + Player.height > other.y && Player.y + 24 < other.y + other.height;
     }
 }
 
@@ -233,7 +262,7 @@ var Game = {
         Game.canvas = document.getElementById('game_screen');
         Game.ctx = Game.canvas.getContext('2d');
 
-        Game.walls.push(new GameObject(0, 200, 50, 50), new GameObject(400, 100, 80, 50));
+        Game.walls.push(new GameObject(75, 250, 50, 50), new GameObject(0, 400, Game.canvas.width, 50));
 
         Player.init();
 
