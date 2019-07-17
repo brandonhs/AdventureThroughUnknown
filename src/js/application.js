@@ -67,14 +67,17 @@ var Player = {
     y: 100,
 
     gravity_force: 0.35,
-    gravity_speed: 0,
     max_gravity_speed: 25,
 
     isJumping: false,
     isGrounded: false,
     canJump: false,
+    isDead: false,
 
-    move_speed: 4,
+    move_speed: {
+        x: 4,
+        y: 10.5
+    },
 
     vel: {
         x: 0,
@@ -124,34 +127,34 @@ var Player = {
     },
 
     update: function() {
+        if (Player.y > Game.canvas.height) {
+            Player.isDead = true;
+        }
         // Input
         if (KeyInputEvents.keysPressed[37]) {
-            Player.vel.x = -Player.move_speed;
+            Player.vel.x = -Player.move_speed.x;
         } else if (KeyInputEvents.keyReleased == 37) {
             Player.vel.x = 0;
             KeyInputEvents.keyReleased = null;
         }
 
         if (KeyInputEvents.keysPressed[39]) {
-            Player.vel.x = Player.move_speed;
+            Player.vel.x = Player.move_speed.x;
         } else if (KeyInputEvents.keyReleased == 39) {
             Player.vel.x = 0;
             KeyInputEvents.keyReleased = null;
         }
 
-        if (!Player.isJumping) {
-            Player.gravity_speed += Player.gravity_force;
-            Player.vel.y = Player.gravity_speed;
-            if (Player.gravity_speed > Player.max_gravity_speed) {
-                Player.gravity_speed = Player.max_gravity_speed;
-            }
+        Player.vel.y += Player.gravity_force;
+        if (Player.vel.y > Player.max_gravity_speed) {
+            Player.vel.y = Player.max_gravity_speed;
         }
 
         if (KeyInputEvents.keysPressed[38] && Player.canJump) {
             Player.canJump = false;
             Player.isGrounded = false;
             Player.isJumping = true;
-            Player.vel.y = -10.5;
+            Player.vel.y = -Player.move_speed.y;
         }
 
         if (!KeyInputEvents.keysPressed[38]) {
@@ -165,11 +168,6 @@ var Player = {
 
         if (KeyInputEvents.keyReleased == 38) {
             KeyInputEvents.keyReleased = null;
-        }
-
-        if (Player.isJumping) {
-            Player.vel.y += Player.gravity_force;
-            console.log(Player.vel.y);
         }
 
         if (Player.vel.x > 0 && !KeyInputEvents.keysPressed[39]) {
@@ -234,7 +232,7 @@ var Player = {
         // top
         if (Player.y + Player.height > other.y && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + 24 < other.y) {
             Player.y = other.y - Player.height;
-            Player.gravity_speed = 0;
+            Player.vel.y = 0;
             Player.isJumping = false;
             Player.isGrounded = true;
             return true;
@@ -244,6 +242,7 @@ var Player = {
         if (Player.y + 24 < other.y + other.height && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + Player.height > other.y + other.height) {
             Player.y = other.y + other.height - 24;
             Player.isJumping = false;
+            Player.vel.y = 0;
             return true;
         }
     }
@@ -255,14 +254,20 @@ var Game = {
 
     walls: [],
 
+    // ! temporary
+    restart: function() {
+        document.location.reload(true);
+    },
+
     init: function() {
+        window.onload = Game.start;
     },
 
     start: function() {
         Game.canvas = document.getElementById('game_screen');
         Game.ctx = Game.canvas.getContext('2d');
 
-        Game.walls.push(new GameObject(75, 250, 50, 50), new GameObject(0, 400, Game.canvas.width, 50));
+        Game.walls.push(new GameObject(75, 250, 64, 64), new GameObject(0, 400, Game.canvas.width-250, 50));
 
         Player.init();
 
@@ -272,6 +277,10 @@ var Game = {
     },
 
     loop: function() {
+        if (Player.isDead) {
+            Game.restart();
+        }
+
         requestAnimationFrame(Game.loop);
 
         Game.ctx.clearRect(0, 0, Game.canvas.width, Game.canvas.height);
@@ -285,4 +294,3 @@ var Game = {
 }
 
 Game.init();
-window.onload = Game.start;
