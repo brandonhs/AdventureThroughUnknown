@@ -70,9 +70,10 @@ var Player = {
     gravity_speed: 0,
     max_gravity_speed: 25,
 
-    jump_force: 0.35,
+    jump_force: -0.35,
     jump_speed: 0,
     isJumping: false,
+    canJump: false,
 
     move_speed: 4,
 
@@ -145,26 +146,23 @@ var Player = {
             Player.gravity_speed = Player.max_gravity_speed;
         }
 
-        /*if (KeyInputEvents.keysPressed[38]) {
+        if (KeyInputEvents.keysPressed[38] && Player.canJump) {
             Player.jump_speed += Player.jump_force;
             Player.vel.y = Player.jump_speed;
+            Player.canJump = false;
             Player.isJumping = true;
         } else if (KeyInputEvents.keyReleased == 38) {
             KeyInputEvents.keyReleased = null;
             Player.isJumping = false;
-        }*/
-
-        var oldX = Player.x;
-        var oldY = Player.y;
+        }
 
         // Movement Update
         Player.x += Player.vel.x;
         Player.y += Player.vel.y;
 
         for (var i = 0; i < Game.walls.length; i++) {
-            if (Player.detectCollsion(Game.walls[i])) {
-                Player.x -= Player.x - oldX;
-                Player.y -= Player.y - oldY;
+            if (Player.handleCollision(Game.walls[i])) {
+                // collision
             }
         }
 
@@ -190,9 +188,35 @@ var Player = {
         }
     },
 
-    detectCollsion: function(other) {
-        return Player.x + Player.width > other.x && Player.x < other.x + other.width
-            && Player.y + Player.height > other.y && Player.y + 24 < other.y + other.height;
+    handleCollision: function(other) {
+        // left
+        if (Player.x + Player.width > other.x && Player.y + Player.height > other.y && Player.y < other.y + other.height && Player.x + Player.width < other.x + 5) {
+            Player.x = other.x - Player.width;
+            return true;
+        }
+
+        // right
+        if (Player.x < other.x + other.width && Player.y + Player.height > other.y && Player.y + 24 < other.y + other.height && Player.x > other.x + other.width - 5)  {
+            Player.x = other.x + other.width;
+            return true;
+        }
+
+        // top
+        if (Player.y + Player.height > other.y && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + 24 < other.y) {
+            Player.y = other.y - Player.height;
+            Player.gravity_speed = 0;
+            Player.canJump = true;
+            return true;
+        }
+
+        // bottom
+        if (Player.y + 24 < other.y + other.height && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + Player.height > other.y + other.height) {
+            Player.y = other.y + other.height - 24;
+            return true;
+        }
+
+        //return Player.x + Player.width > other.x && Player.x < other.x + other.width
+        //    && Player.y + Player.height > other.y && Player.y + 24 < other.y + other.height;
     }
 }
 
@@ -209,7 +233,7 @@ var Game = {
         Game.canvas = document.getElementById('game_screen');
         Game.ctx = Game.canvas.getContext('2d');
 
-        Game.walls.push(new GameObject(70, 100, 50, 50), new GameObject(400, 100, 80, 50));
+        Game.walls.push(new GameObject(0, 200, 50, 50), new GameObject(400, 100, 80, 50));
 
         Player.init();
 
