@@ -64,7 +64,10 @@ var KeyInputEvents = {
 
 var Player = {
     x: 0,
-    y: 100,
+    y: 0,
+
+    spawnX: 0,
+    spawnY: 100,
 
     gravity_force: 0.35,
     max_gravity_speed: 25,
@@ -102,6 +105,12 @@ var Player = {
     idleCanPlay: true,
 
     init: function() {
+        if (!Game.first_load) {
+            clearInterval(Player.animations.idle.animId);
+            clearInterval(Player.animations.walk.right.animId);
+            clearInterval(Player.animations.walk.left.animId);
+        }
+
         Player.animations.idle = new GameAnimation('src/anim/PlayerAnimationIdle.png', 8, 1.5, Player.width, Player.height);
         Player.animations.walk.right = new GameAnimation('src/anim/PlayerAnimationWalkRight.png', 1, 2, Player.width, Player.height);
         Player.animations.walk.left = new GameAnimation('src/anim/PlayerAnimationWalkLeft.png', 1, 2, Player.width, Player.height);
@@ -252,15 +261,27 @@ var Game = {
     canvas: null,
     ctx: null,
 
+    first_load: true,
+
     walls: [],
 
-    // ! temporary
     restart: function() {
-        document.location.reload(true);
+        ////document.location.reload(true);
+        Game.first_load = false;
+        Player.x = Player.spawnX;
+        Player.y = Player.spawnY;
+        Player.isJumping = false;
+        Player.canJump = false;
+        Player.isGrounded = false;
+        Player.isDead = false;
+        Player.vel.y = 0;
+        Player.init();
     },
 
     init: function() {
         window.onload = Game.start;
+        Player.x = Player.spawnX;
+        Player.y = Player.spawnY;
     },
 
     start: function() {
