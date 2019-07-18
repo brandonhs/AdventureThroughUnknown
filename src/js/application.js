@@ -77,6 +77,8 @@ var Camera = {
     },
 
     update() {
+        Player.x -= this.speedX;
+
         for (var i = 0; i < Game.walls.length; i++) {
             Game.walls[i].x -= this.speedX;
         }
@@ -227,14 +229,12 @@ var Player = {
         }
 
         // Movement Update
-        //Player.x += Player.vel.x;
+        Player.x += Player.vel.x;
         Player.y += Player.vel.y;
-
-        Camera.scroll(Player.vel.x);
 
         for (var i = 0; i < Game.walls.length; i++) {
             if (Player.handleCollision(Game.walls[i])) {
-                
+
             } else {
                 
             }
@@ -269,15 +269,13 @@ var Player = {
     handleCollision: function(other) {
         // left
         if (Player.x + Player.width > other.x && Player.y + Player.height > other.y && Player.y < other.y + other.height && Player.x + Player.width < other.x + 5) {
-            //Player.x = other.x - Player.width;
-            Camera.stop();
+            Player.x = other.x - Player.width;
             return true;
         }
 
         // right
         if (Player.x < other.x + other.width && Player.y + Player.height > other.y && Player.y + 24 < other.y + other.height && Player.x > other.x + other.width - 5)  {
-            //Player.x = other.x + other.width;
-            Camera.stop();
+            Player.x = other.x + other.width;
             return true;
         }
 
@@ -334,8 +332,6 @@ var Game = {
 
         Game.walls.push(new GameObject(75, 250, 64, 64), new GameObject(0, 400, Game.canvas.width + 250, 50));
 
-        Camera.init();
-
         Player.init();
 
         KeyInputEvents.init();
@@ -353,8 +349,6 @@ var Game = {
         Game.ctx.clearRect(0, 0, Game.canvas.width, Game.canvas.height);
 
         Player.update();
-
-        Camera.update();
 
         for (var i = 0; i < Game.walls.length; i++) {
             Game.walls[i].draw(Game.ctx);
