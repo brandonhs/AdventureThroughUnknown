@@ -47,6 +47,42 @@ class GameObject {
     }
 }
 
+var Camera = {
+    x: 0,
+    y: 0,
+    width: 0,
+    height: 0,
+
+    speedX: 0,
+
+    follow_player: false,
+
+    isScrolling: false,
+
+    init() {
+        this.width = Game.canvas.width;
+        this.height = Game.canvas.height;
+
+        if (this.follow_player) {
+            this.isScrolling = true;
+        }
+    },
+
+    scroll(dx) {
+        this.speedX = dx;
+    },
+
+    stop() {
+        this.speedX = 0;
+    },
+
+    update() {
+        for (var i = 0; i < Game.walls.length; i++) {
+            Game.walls[i].x -= this.speedX;
+        }
+    }
+};
+
 var KeyInputEvents = {
     keysPressed: [],
     keyReleased: Number,
@@ -67,7 +103,10 @@ var Player = {
     y: 0,
 
     spawnX: 0,
-    spawnY: 100,
+    spawnY: 0,
+
+    renderX: 0,
+    renderY: 0,
 
     gravity_force: 0.35,
     max_gravity_speed: 25,
@@ -188,14 +227,16 @@ var Player = {
         }
 
         // Movement Update
-        Player.x += Player.vel.x;
+        //Player.x += Player.vel.x;
         Player.y += Player.vel.y;
+
+        Camera.scroll(Player.vel.x);
 
         for (var i = 0; i < Game.walls.length; i++) {
             if (Player.handleCollision(Game.walls[i])) {
-                // collision
+                
             } else {
-                // no collsion
+                
             }
         }
 
@@ -228,13 +269,15 @@ var Player = {
     handleCollision: function(other) {
         // left
         if (Player.x + Player.width > other.x && Player.y + Player.height > other.y && Player.y < other.y + other.height && Player.x + Player.width < other.x + 5) {
-            Player.x = other.x - Player.width;
+            //Player.x = other.x - Player.width;
+            Camera.stop();
             return true;
         }
 
         // right
         if (Player.x < other.x + other.width && Player.y + Player.height > other.y && Player.y + 24 < other.y + other.height && Player.x > other.x + other.width - 5)  {
-            Player.x = other.x + other.width;
+            //Player.x = other.x + other.width;
+            Camera.stop();
             return true;
         }
 
@@ -266,7 +309,6 @@ var Game = {
     walls: [],
 
     restart: function() {
-        ////document.location.reload(true);
         Game.first_load = false;
         Player.x = Player.spawnX;
         Player.y = Player.spawnY;
@@ -280,15 +322,19 @@ var Game = {
 
     init: function() {
         window.onload = Game.start;
-        Player.x = Player.spawnX;
-        Player.y = Player.spawnY;
     },
 
     start: function() {
         Game.canvas = document.getElementById('game_screen');
         Game.ctx = Game.canvas.getContext('2d');
 
-        Game.walls.push(new GameObject(75, 250, 64, 64), new GameObject(0, 400, Game.canvas.width-250, 50));
+        Player.spawnX = Game.canvas.width / 2 - Player.width / 2;
+        Player.x = Player.spawnX;
+        Player.y = Player.spawnY;
+
+        Game.walls.push(new GameObject(75, 250, 64, 64), new GameObject(0, 400, Game.canvas.width + 250, 50));
+
+        Camera.init();
 
         Player.init();
 
@@ -306,11 +352,13 @@ var Game = {
 
         Game.ctx.clearRect(0, 0, Game.canvas.width, Game.canvas.height);
 
+        Player.update();
+
+        Camera.update();
+
         for (var i = 0; i < Game.walls.length; i++) {
             Game.walls[i].draw(Game.ctx);
         }
-
-        Player.update();
     }
 }
 
