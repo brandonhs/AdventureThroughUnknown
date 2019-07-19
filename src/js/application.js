@@ -427,29 +427,24 @@ var Game = {
             [0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4],
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],         
         ], 1));
 
-        Game.load_next_level();
+        Game.levels.push(new Level([
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 4],
+            [0, 0, 0, 0, 0, 3, 3, 0, 3, 3, 0, 0, 0, 0, 3],
+            [0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 0, 0, 3, 3],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2],         
+        ]), 2);
 
-        /*for (var y = 0; y < Game.levels[0].data.length; y++) {
-            for (var x = 0; x < Game.levels[0].data[0].length; x++) {
-                if (Game.levels[0].data[y][x] == 1) {
-                    Game.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[0]));
-                }
-                if (Game.levels[0].data[y][x] == 2) {
-                    Game.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[1]));
-                }
-                if (Game.levels[0].data[y][x] == 3) {
-                    Game.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[2]));
-                }
-                if (Game.levels[0].data[y][x] == 4) {
-                    Game.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[3], "Level Complete"));
-                }
-            }
-        }*/
+        Game.load_next_level();
 
         Player.init();
 
@@ -494,6 +489,8 @@ var Game = {
         for (var i = 0; i < Game.walls.length; i++) {
             Game.walls[i].draw(Game.ctx);
         }
+
+        Player.canComplete = true;
     }
 }
 

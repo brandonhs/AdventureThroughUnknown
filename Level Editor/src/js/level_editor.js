@@ -22,7 +22,8 @@ class GameImage {
 const images = [
     new GameImage("../src/img/tile_grass.png"),
     new GameImage("../src/img/tile_dirt.png"),
-    new GameImage("../src/img/tile_rock.png")
+    new GameImage("../src/img/tile_rock.png"),
+    new GameImage("../src/img/tile_level_complete.png")
 ];
 
 var mouse = {
@@ -51,6 +52,9 @@ document.addEventListener('keydown', function(e) {
     }
     if (e.keyCode == 51) {
         current_image = 3;
+    }
+    if (e.keyCode == 52) {
+        current_image = 4;
     }
     if (e.keyCode == 48) {
         current_image = -1;
@@ -172,6 +176,13 @@ function loop() {
                     ctx.fillRect(x*64, y*64, 64, 64);
                 } else {
                     images[2].draw(ctx, x*64, y*64);
+                }
+            } else if (level.data[y][x] == 4) {
+                if (mouse.erasing && Math.floor(mouse.y/64) == y && Math.floor(mouse.x/64) == x) {
+                    ctx.fillStyle = "rgba(255, 0, 0, 0.25)";
+                    ctx.fillRect(x*64, y*64, 64, 64);
+                } else {
+                    images[3].draw(ctx, x*64, y*64);
                 }
             }
         }
