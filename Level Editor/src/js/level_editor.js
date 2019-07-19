@@ -127,7 +127,7 @@ function loop() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    ctx.strokeStyle = "rgb(0, 0, 0)"
+    ctx.strokeStyle = "rgb(0, 0, 0)";
     for (var x = 0; x < canvas.width; x += 64) {
         ctx.moveTo(x, 0);
         ctx.lineTo(x, canvas.height);
