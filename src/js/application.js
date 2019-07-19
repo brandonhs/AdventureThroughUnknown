@@ -47,6 +47,25 @@ class GameObject {
     }
 }
 
+class Level {
+    /**
+     * @param {[][]} data 
+     */
+    constructor(data) {
+        this.data = data;
+        this.width = data.length;
+        this.height = data[0].length;
+    }
+
+    /**
+     * returns a game object
+     * @returns {GameObject} gameObject
+     */
+    out(x, y) {
+        return this.data[x][y];
+    }
+}
+
 var Camera = {
     x: 0,
     y: 0,
@@ -120,7 +139,7 @@ var Player = {
 
     move_speed: {
         x: 4,
-        y: 10.5
+        y: 11
     },
 
     vel: {
@@ -268,19 +287,19 @@ var Player = {
      */
     handleCollision: function(other) {
         // left
-        if (Player.x + Player.width > other.x && Player.y + Player.height > other.y && Player.y < other.y + other.height && Player.x + Player.width < other.x + 5) {
+        if (Player.x + Player.width > other.x && Player.y + Player.height > other.y && Player.y + 24 < other.y + other.height && Player.x + Player.width < other.x + 5) {
             Player.x = other.x - Player.width;
             return true;
         }
 
         // right
-        if (Player.x < other.x + other.width && Player.y + Player.height > other.y && Player.y + 24 < other.y + other.height && Player.x > other.x + other.width - 5)  {
+        else if (Player.x < other.x + other.width && Player.y + Player.height > other.y + 1 && Player.y + 24 < other.y + other.height && Player.x > other.x + other.width - 5)  {
             Player.x = other.x + other.width;
             return true;
         }
 
         // top
-        if (Player.y + Player.height > other.y && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + 24 < other.y) {
+        else if (Player.y + Player.height > other.y && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + 24 < other.y) {
             Player.y = other.y - Player.height;
             Player.vel.y = 0;
             Player.isJumping = false;
@@ -289,7 +308,7 @@ var Player = {
         }
 
         // bottom
-        if (Player.y + 24 < other.y + other.height && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + Player.height > other.y + other.height) {
+        else if (Player.y + 24 < other.y + other.height && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + Player.height > other.y + other.height) {
             Player.y = other.y + other.height - 24;
             Player.isJumping = false;
             Player.vel.y = 0;
@@ -303,6 +322,8 @@ var Game = {
     ctx: null,
 
     first_load: true,
+
+    levels: [],
 
     walls: [],
 
@@ -330,7 +351,27 @@ var Game = {
         Player.x = Player.spawnX;
         Player.y = Player.spawnY;
 
-        Game.walls.push(new GameObject(75, 250, 64, 64), new GameObject(0, 400, Game.canvas.width + 250, 50));
+        Game.levels.push(new Level([
+            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+            [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
+            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        ]));
+
+        if (Game.first_load) {
+            for (var y = 0; y < Game.levels[0].data.length; y++) {
+                for (var x = 0; x < Game.levels[0].data[0].length; x++) {
+                    if (Game.levels[0].data[y][x] == 1) {
+                        Game.walls.push(new GameObject(x*64, y*64, 64, 64));
+                    }
+                }
+            }
+        }
 
         Player.init();
 
