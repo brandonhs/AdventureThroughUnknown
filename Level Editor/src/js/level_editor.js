@@ -1,6 +1,29 @@
 var canvas = document.getElementById('editor');
 var ctx = canvas.getContext('2d');
 
+class GameImage {
+    /**
+     * @param {String} src 
+     */
+    constructor(src) {
+        this.img = new Image();
+        this.img.src = src;
+    }
+    /**
+     * @param {CanvasRenderingContext2D} ctx 
+     * @param {Number} x 
+     * @param {Number} y 
+     */
+    draw(ctx, x, y) {
+        ctx.drawImage(this.img, x, y);
+    }
+}
+
+const images = [
+    new GameImage("../src/img/tile_grass.png"),
+    new GameImage("../src/img/tile_dirt.png")
+];
+
 var mouse = {
     x: 0,
     y: 0,
@@ -13,9 +36,20 @@ var mouse = {
     }
 };
 
+var current_image = 1;
+
 document.addEventListener('keydown', function(e) {
     if (e.keyCode == 69) {
         mouse.erasing = true;
+    }
+    if (e.keyCode == 49) {
+        current_image = 1;
+    }
+    if (e.keyCode == 50) {
+        current_image = 2;
+    }
+    if (e.keyCode == 48) {
+        current_image = -1;
     }
 });
 
@@ -38,23 +72,9 @@ canvas.addEventListener('mousemove', function(e) {
     mouse.y = e.y;
 });
 
-
-canvas.addEventListener('touchstart', function() {
-    mouse.down = true;
-});
-
-canvas.addEventListener('touchend', function() {
-    mouse.down = false;
-});
-
-canvas.addEventListener('touchmove', function(e) {
-    mouse.x = e.x;
-    mouse.y = e.y;
-});
-
 function submit() {
     var output = document.getElementById("output");
-    output.value = "level = [\n";
+    output.value = "";
     for (var y = 0; y < level.data.length; y++) {
         for (var x = 0; x < level.data[0].length; x++) {
             if (x == 0) {
@@ -68,7 +88,9 @@ function submit() {
             }
         }
     }
-    output.value += "];"
+    output.select();
+
+    document.execCommand("copy");
 }
 
 function makeEmptyLevel(width, height, val) {
@@ -102,18 +124,11 @@ function loop() {
     }
     ctx.stroke();
 
-    if (mouse.erasing) {
-        ctx.fillStyle = "rgba(255, 0, 0, 0.25)";
-    } else {
-        ctx.fillStyle = "rgba(1, 1, 1, 0.1)";
-    }
-    ctx.fillRect(Math.floor(mouse.x/64)*64, Math.floor(mouse.y/64)*64, 64, 64);
-
     if (mouse.down) {
         if (mouse.erasing) {
             level.data[Math.floor(mouse.y/64)][Math.floor(mouse.x/64)] = 0;
-        } else {
-            level.data[Math.floor(mouse.y/64)][Math.floor(mouse.x/64)] = 1;
+        } else if (current_image != -1) {
+            level.data[Math.floor(mouse.y/64)][Math.floor(mouse.x/64)] = current_image;
             mouse.last_move = {
                 x: Math.floor(mouse.y/64),
                 y: Math.floor(mouse.x/64)
@@ -126,13 +141,27 @@ function loop() {
             if (level.data[y][x] == 1) {
                 if (mouse.erasing && Math.floor(mouse.y/64) == y && Math.floor(mouse.x/64) == x) {
                     ctx.fillStyle = "rgba(255, 0, 0, 0.25)";
+                    ctx.fillRect(x*64, y*64, 64, 64);
                 } else {
-                    ctx.fillStyle = "rgba(0, 0, 0, 1)";
+                    images[0].draw(ctx, x*64, y*64);
                 }
-                ctx.fillRect(x*64, y*64, 64, 64);
+            } else if (level.data[y][x] == 2) {
+                if (mouse.erasing && Math.floor(mouse.y/64) == y && Math.floor(mouse.x/64) == x) {
+                    ctx.fillStyle = "rgba(255, 0, 0, 0.25)";
+                    ctx.fillRect(x*64, y*64, 64, 64);
+                } else {
+                    images[1].draw(ctx, x*64, y*64);
+                }
             }
         }
     }
+
+    if (mouse.erasing) {
+        ctx.fillStyle = "rgba(255, 0, 0, 0.25)";
+        ctx.fillRect(Math.floor(mouse.x/64)*64, Math.floor(mouse.y/64)*64, 64, 64);
+    } else {
+        images[current_image-1].draw(ctx, Math.floor(mouse.x/64)*64, Math.floor(mouse.y/64)*64);
+    }
 }
 
-loop();
+window.onload = loop();

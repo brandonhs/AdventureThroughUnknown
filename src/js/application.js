@@ -34,16 +34,51 @@ class GameAnimation {
     }
 }
 
+class GameImage {
+    /**
+     * @param {String} src 
+     */
+    constructor(src) {
+        this.img = new Image();
+        this.img.src = src;
+    }
+    /**
+     * @param {CanvasRenderingContext2D} ctx 
+     * @param {Number} x 
+     * @param {Number} y 
+     */
+    draw(ctx, x, y) {
+        ctx.drawImage(this.img, x, y);
+    }
+}
+
 class GameObject {
-    constructor(x, y, width, height) {
+    /**
+     * @param {Number} x 
+     * @param {Number} y
+     * @param {Number} width
+     * @param {Number} heigth
+     * @param {GameImage} img
+     */
+    constructor(x, y, width, height, img) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
+
+        this.img = null;
+
+        if (img != undefined) {
+            this.img = img;
+        }
     }
 
     draw(ctx) {
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        if (this.img != null) {
+            this.img.draw(ctx, this.x, this.y)
+        } else {
+            ctx.fillRect(this.x, this.y, this.width, this.height);
+        }
     }
 }
 
@@ -323,6 +358,11 @@ var Game = {
 
     first_load: true,
 
+    images: [
+        new GameImage("src\\img\\tile_grass.png"),
+        new GameImage("src\\img\\tile_dirt.png")
+    ],
+
     levels: [],
 
     walls: [],
@@ -352,22 +392,25 @@ var Game = {
         Player.y = Player.spawnY;
 
         Game.levels.push(new Level([
-            [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
-            [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+            [0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
         ]));
 
         if (Game.first_load) {
             for (var y = 0; y < Game.levels[0].data.length; y++) {
                 for (var x = 0; x < Game.levels[0].data[0].length; x++) {
                     if (Game.levels[0].data[y][x] == 1) {
-                        Game.walls.push(new GameObject(x*64, y*64, 64, 64));
+                        Game.walls.push(new GameObject(x*64, y*64, 64, 64, Game.images[0]));
+                    }
+                    if (Game.levels[0].data[y][x] == 2) {
+                        Game.walls.push(new GameObject(x*64, y*64, 64, 64, Game.images[1]));
                     }
                 }
             }
