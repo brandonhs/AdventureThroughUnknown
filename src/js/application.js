@@ -360,7 +360,8 @@ var Game = {
 
     images: [
         new GameImage("src\\img\\tile_grass.png"),
-        new GameImage("src\\img\\tile_dirt.png")
+        new GameImage("src\\img\\tile_dirt.png"),
+        new GameImage("src/img/tile_rock.png")
     ],
 
     levels: [],
@@ -394,13 +395,14 @@ var Game = {
         Game.levels.push(new Level([
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 3, 0],
+            [0, 0, 0, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3],
+            [0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 3],
+            [0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 3, 3, 0, 0, 3],
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
             [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+         
         ]));
 
         if (Game.first_load) {
@@ -411,6 +413,9 @@ var Game = {
                     }
                     if (Game.levels[0].data[y][x] == 2) {
                         Game.walls.push(new GameObject(x*64, y*64, 64, 64, Game.images[1]));
+                    }
+                    if (Game.levels[0].data[y][x] == 3) {
+                        Game.walls.push(new GameObject(x*64, y*64, 64, 64, Game.images[2]));
                     }
                 }
             }
