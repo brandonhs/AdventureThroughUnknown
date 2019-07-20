@@ -213,6 +213,9 @@ var Player = {
             clearInterval(Player.animations.walk.left.animId);
         }
 
+        Player.x = Player.spawnX;
+        Player.y = Player.spawnY;
+
         Player.animations.idle = new GameAnimation('src/anim/PlayerAnimationIdle.png', 8, 1.5, Player.width, Player.height);
         Player.animations.walk.right = new GameAnimation('src/anim/PlayerAnimationWalkRight.png', 1, 2, Player.width, Player.height);
         Player.animations.walk.left = new GameAnimation('src/anim/PlayerAnimationWalkLeft.png', 1, 2, Player.width, Player.height);
@@ -235,6 +238,16 @@ var Player = {
                 Player.animations.walk.left.play();
             }
         }, 1000/Player.animations.walk.left.fps);
+    },
+
+    reInit: function() {
+        Player.x = Player.spawnX;
+        Player.y = Player.spawnY;
+        Player.isJumping = false;
+        Player.canJump = false;
+        Player.isGrounded = false;
+        Player.isDead = false;
+        Player.vel.y = 0;
     },
 
     update: function() {
@@ -296,9 +309,10 @@ var Player = {
         for (var i = 0; i < Game.walls.length; i++) {
             if (Player.handleCollision(Game.walls[i])) {
                 if (Game.walls[i].tag == "Level Complete" && Player.canComplete) {
-                    console.log("Level Completed!");
-                    Game.load_next_level();
-                    Player.canComplete = false;
+                    if (Game.load_next_level() != null) {
+                        Player.canComplete = false;
+                        return;
+                    }
                 }
             } else {
                 
@@ -363,6 +377,8 @@ var Player = {
     }
 }
 
+
+// TODO split "walls" into different variables
 var Game = {
     canvas: null,
     ctx: null,
@@ -376,7 +392,8 @@ var Game = {
         new GameImage("src/img/tile_grass.png"),
         new GameImage("src/img/tile_dirt.png"),
         new GameImage("src/img/tile_rock.png"),
-        new GameImage("src/img/tile_level_complete.png")
+        new GameImage("src/img/tile_level_complete.png"),
+        new GameImage("src/img/tile_level_start.png")
     ],
 
     levels: [],
@@ -386,14 +403,7 @@ var Game = {
 
     restart: function() {
         Game.first_load = false;
-        Player.x = Player.spawnX;
-        Player.y = Player.spawnY;
-        Player.isJumping = false;
-        Player.canJump = false;
-        Player.isGrounded = false;
-        Player.isDead = false;
-        Player.vel.y = 0;
-        Player.init();
+        Player.reInit();
     },
 
     init: function() {
@@ -404,10 +414,6 @@ var Game = {
         Game.canvas = document.getElementById('game_screen');
         Game.ctx = Game.canvas.getContext('2d');
 
-        Player.spawnX = Game.canvas.width / 2 - Player.width / 2;
-        Player.x = Player.spawnX;
-        Player.y = Player.spawnY;
-
         Game.levels.push(new Level([
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -415,34 +421,34 @@ var Game = {
             [0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 3, 2],
             [0, 0, 0, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3],
             [0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 3],
-            [0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 3, 3, 0, 0, 3],
+            [5, 0, 0, 0, 0, 0, 0, 3, 0, 0, 3, 3, 0, 0, 3],
             [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
             [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
         ], 0));
 
         Game.levels.push(new Level([
-            [0, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 3, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],         
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 3, 3, 0, 0, 0, 3, 3, 0, 0, 0, 4],
+            [5, 3, 3, 3, 3, 3, 0, 0, 0, 3, 3, 3, 3, 3, 1],                         
         ], 1));
 
         Game.levels.push(new Level([
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 4],
-            [0, 0, 0, 0, 0, 3, 3, 0, 3, 3, 0, 0, 0, 0, 3],
-            [0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 0, 0, 3, 3],
-            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2],         
-        ]), 2);
+            [4, 0, 0, 0, 0, 3, 3, 3, 3, 0, 0, 0, 0, 0, 3],
+            [3, 3, 0, 0, 0, 3, 0, 0, 3, 0, 0, 0, 0, 3, 3],
+            [0, 0, 0, 0, 0, 3, 0, 5, 3, 0, 0, 0, 3, 3, 3],
+            [0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 3, 3, 3],
+            [0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],         
+        ], 2));
 
         Game.load_next_level();
 
@@ -454,6 +460,8 @@ var Game = {
     },
 
     load_next_level: function() {
+        if (Game.current_level == Game.levels.length)
+            return null;
         Game.walls = [];
         for (var y = 0; y < Game.levels[Game.current_level].data.length; y++) {
             for (var x = 0; x < Game.levels[Game.current_level].data[Game.current_level].length; x++) {
@@ -469,8 +477,15 @@ var Game = {
                 if (Game.levels[Game.current_level].data[y][x] == 4) {
                     Game.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[3], "Level Complete"));
                 }
+                if (Game.levels[Game.current_level].data[y][x] == 5) {
+                    Game.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[4]));
+                    Player.spawnX = x*Game.tile_width;
+                    Player.spawnY = y*Game.tile_height - Player.height;
+                }
             }
         }
+
+        Player.reInit();
 
         Game.current_level += 1;
     },
