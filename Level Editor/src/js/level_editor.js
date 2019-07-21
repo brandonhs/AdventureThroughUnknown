@@ -1,6 +1,10 @@
 var canvas = document.getElementById('editor');
 var ctx = canvas.getContext('2d');
 
+if (typeof localStorage.levels == 'undefined') {
+    console.log("First time.");
+}
+
 class GameImage {
     /**
      * @param {String} src 
@@ -33,6 +37,8 @@ var mouse = {
     down: false,
     erasing: false,
 
+    oncanvas: false,
+
     last_move: {
         x: 0,
         y: 0
@@ -63,6 +69,10 @@ document.addEventListener('keydown', function(e) {
     if (e.keyCode == 48) {
         current_image = -1;
     }
+    if (e.keyCode == 37) {
+        localStorage.clear();
+        console.log("cleared");
+    }
 });
 
 document.addEventListener('keyup', function(e) {
@@ -84,6 +94,14 @@ canvas.addEventListener('mousemove', function(e) {
     mouse.y = e.y;
 });
 
+canvas.addEventListener('mouseover', function() {
+    mouse.oncanvas = true;
+});
+
+canvas.addEventListener('mouseout', function() {
+    mouse.oncanvas = false;
+});
+
 function submit() {
     var output = document.getElementById("output");
     output.value = "";
@@ -103,16 +121,17 @@ function submit() {
     output.select();
 
     document.execCommand("copy");
+
+    var a = [];
+    a.push(localStorage.levels);
+    a.push(level.data);
+    localStorage.setItem("levels", JSON.stringify(a));
 }
 
-//! temp
 function load() {
     var input = document.getElementById("input");
-    var dataStr = input.value.split(', ');
-    for (var i = 0; i < dataStr.length; i++) {
-        console.log(parseInt(dataStr));
-        console.log(dataStr);
-    }
+    level.data = JSON.parse(localStorage.levels)[parseInt(input.value)];
+    console.log(level.data);
 }
 
 function makeEmptyLevel(width, height, val) {
@@ -125,6 +144,8 @@ function makeEmptyLevel(width, height, val) {
     }
     return temp;
 }
+
+var levels = [];
 
 var level = {
     data: makeEmptyLevel(15, 9, 0)
@@ -202,7 +223,7 @@ function loop() {
     if (mouse.erasing) {
         ctx.fillStyle = "rgba(255, 0, 0, 0.25)";
         ctx.fillRect(Math.floor(mouse.x/64)*64, Math.floor(mouse.y/64)*64, 64, 64);
-    } else {
+    } else if (current_image != -1 && mouse.oncanvas) {
         images[current_image-1].draw(ctx, Math.floor(mouse.x/64)*64, Math.floor(mouse.y/64)*64);
     }
 }
