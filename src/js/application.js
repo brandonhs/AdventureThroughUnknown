@@ -84,6 +84,60 @@ class GameObject {
     }
 }
 
+class GameMovingPlatform {
+    /**
+     * @param {Number} x 
+     * @param {Number} y
+     * @param {Number} width
+     * @param {Number} heigth
+     * @param {GameImage} img
+     * @param {Number} speed
+     */
+    constructor(x, y, width, height, img, speedX, speedY, offsetX, offsetY) {
+        this.x = x;
+        this.y = y;
+        this.start = {
+            x: x,
+            y: y
+        }
+        this.width = width;
+        this.height = height;
+        this.speed = {
+            x: speedX,
+            y: speedY
+        };
+        this.offset = {
+            x: offsetX,
+            y: offsetY
+        }
+
+        this.img = img;
+
+        this.isUp = true;
+        this.isRight = true;
+    }
+
+    update() {
+        if (this.isRight) {
+            this.x += this.speed.x;
+            if (this.x > this.start.x + this.offset.x) {
+                this.x = this.offset.x + this.start.x;
+                this.isRight = false;
+            }
+        } else {
+            this.x -= this.speed.x;
+            if (this.x < this.start.x) {
+                this.x = this.start.x;
+                this.isRight = true;
+            }
+        }
+    }
+
+    draw(ctx) {
+        this.img.draw(ctx, this.x, this.y)
+    }
+}
+
 class Level {
     /**
      * @param {[][]} data
@@ -123,6 +177,8 @@ var KeyInputEvents = {
 var Player = {
     x: 0,
     y: 0,
+
+    num_deaths: 0,
 
     spawnX: 0,
     spawnY: 0,
@@ -276,6 +332,12 @@ var Player = {
             }
         }
 
+        for (var i = 0; i < Game.blocks.moving_kill_zones.length; i++) {
+            if (Player.collidesWith(Game.blocks.moving_kill_zones[i])) {
+                Player.isDead = true;
+            }
+        }
+
         for (var i = 0; i < Game.coins.length; i++) {
             if (Player.collidesWith(Game.coins[i])) {
                 Game.coins.splice(i, 1);
@@ -283,15 +345,21 @@ var Player = {
             }
         }
 
-        for (var i = 0; i < Game.blocks.walls.length; i++) {
-            if (Player.handleCollision(Game.blocks.walls[i])) {
-                if (Game.blocks.walls[i].tag == "Level Complete" && Player.canComplete) {
-                    if (Game.load_next_level() != null) {
-                        Player.canComplete = false;
-                        return;
-                    }
+        for (var i = 0; i < Game.blocks.end_zones.length; i++) {
+            if (Player.handleCollision(Game.blocks.end_zones[i])) {
+                if (Game.load_next_level() != null) {
+                    Player.canComplete = false;
+                    return;
                 }
-            } else { }
+            }
+        }
+
+        for (var i = 0; i < Game.blocks.start_zones.length; i++) {
+            if (Player.handleCollision(Game.blocks.start_zones[i])) { } else {}
+        }
+
+        for (var i = 0; i < Game.blocks.walls.length; i++) {
+            if (Player.handleCollision(Game.blocks.walls[i])) { } else { }
         }
 
         Game.ctx.font = "25px Arial";
@@ -406,12 +474,12 @@ var Game = {
     levels: [],
     current_level: 0,
 
-    // TODO implement this
     blocks: {
         walls: [],
         start_zones: [],
         end_zones: [],
-        kill_zones: []
+        kill_zones: [],
+        moving_kill_zones: []
     },
 
     restart: function() {
@@ -474,7 +542,7 @@ var Game = {
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0],
             [0, 0, 0, 7, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 7, 0, 0, 7, 0, 0, 7, 0, 0, 0, 0, 0],
+            [0, 0, 0, 7, 0, 0, 7, 0, 0, {offset: {x: 100, y: 0}, speed: {x: 1, y: 0}, id: 8}, 0, 0, 0, 0, 0],
             [5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],                        
         ], 2));
 
@@ -493,41 +561,52 @@ var Game = {
         
         Game.blocks.walls = [];
         Game.blocks.kill_zones = [];
+        Game.blocks.end_zones = [];
+        Game.blocks.start_zones = [];
         Game.coins = [];
         for (var y = 0; y < Game.levels[Game.current_level].data.length; y++) {
             for (var x = 0; x < Game.levels[Game.current_level].data[Game.current_level].length; x++) {
-                if (Game.levels[Game.current_level].data[y][x] == 1) {
-                    Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[0]));
-                }
-                if (Game.levels[Game.current_level].data[y][x] == 2) {
-                    Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[1]));
-                }
-                if (Game.levels[Game.current_level].data[y][x] == 3) {
-                    Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[2]));
-                }
-                if (Game.levels[Game.current_level].data[y][x] == 4) {
-                    Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[3], "Level Complete"));
-                }
-                if (Game.levels[Game.current_level].data[y][x] == 5) {
-                    Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[4]));
-                    Player.spawnX = x*Game.tile_width;
-                    Player.spawnY = y*Game.tile_height - Player.height;
-                }
-                if (Game.levels[Game.current_level].data[y][x] == 6) {
-                    Game.coins.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, null, null, new GameAnimation("src/anim/anim_coin.png", 4, 4, Game.tile_width, Game.tile_height)));
-                    if (Game.coinAnimId == null) {
-                        clearInterval(Game.coinAnimId);
-                        Game.coinAnimId = setInterval(function() {
-                            for (var i = 0; i< Game.coins.length; i++) {
-                                Game.coins[i].animation.isPlaying = true;
-                                Game.coins[i].animation.update();
-                                Game.coins[i].animation.play();
-                            }
-                        }, 1000/Game.coins[0].animation.fps);
+                if (typeof Game.levels[Game.current_level].data[y][x] == 'number') {
+                    if (Game.levels[Game.current_level].data[y][x] == 1) {
+                        Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[0]));
                     }
-                }
-                if (Game.levels[Game.current_level].data[y][x] == 7) {
-                    Game.blocks.kill_zones.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[5], "Dead Zone"));
+                    if (Game.levels[Game.current_level].data[y][x] == 2) {
+                        Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[1]));
+                    }
+                    if (Game.levels[Game.current_level].data[y][x] == 3) {
+                        Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[2]));
+                    }
+                    if (Game.levels[Game.current_level].data[y][x] == 4) {
+                        Game.blocks.end_zones.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[3], "Level Complete"));
+                    }
+                    if (Game.levels[Game.current_level].data[y][x] == 5) {
+                        Game.blocks.start_zones.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[4]));
+                        Player.spawnX = x*Game.tile_width;
+                        Player.spawnY = y*Game.tile_height - Player.height;
+                    }
+                    if (Game.levels[Game.current_level].data[y][x] == 6) {
+                        Game.coins.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, null, null, new GameAnimation("src/anim/anim_coin.png", 4, 4, Game.tile_width, Game.tile_height)));
+                        if (Game.coinAnimId == null) {
+                            clearInterval(Game.coinAnimId);
+                            Game.coinAnimId = setInterval(function() {
+                                for (var i = 0; i< Game.coins.length; i++) {
+                                    Game.coins[i].animation.isPlaying = true;
+                                    Game.coins[i].animation.update();
+                                    Game.coins[i].animation.play();
+                                }
+                            }, 1000/Game.coins[0].animation.fps);
+                        }
+                    }
+                    if (Game.levels[Game.current_level].data[y][x] == 7) {
+                        Game.blocks.kill_zones.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[5], "Dead Zone"));
+                    }
+                    if (Game.levels[Game.current_level].data[y][x] == 8) {
+                        Game.blocks.moving_kill_zones.push(new GameMovingPlatform(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[5], 1, 0, 100, 0));
+                    }
+                } else if (typeof Game.levels[Game.current_level].data[y][x] == 'object') {
+                    if (Game.levels[Game.current_level].data[y][x].id == 8) {
+                        Game.blocks.moving_kill_zones.push(new GameMovingPlatform(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[5], Game.levels[Game.current_level].data[y][x].speed.x, Game.levels[Game.current_level].data[y][x].y, Game.levels[Game.current_level].data[y][x].offset.x, Game.levels[Game.current_level].data[y][x].offset.y));
+                    }
                 }
             }
         }
@@ -539,6 +618,7 @@ var Game = {
 
     loop: function() {
         if (Player.isDead) {
+            Player.num_deaths += 1;
             Game.restart();
         }
 
@@ -551,14 +631,25 @@ var Game = {
         for (var i = 0; i < Game.blocks.walls.length; i++) {
             Game.blocks.walls[i].draw(Game.ctx);
         }
+        for (var i = 0; i < Game.blocks.start_zones.length; i++) {
+            Game.blocks.start_zones[i].draw(Game.ctx);
+        }
+        for (var i = 0; i < Game.blocks.end_zones.length; i++) {
+            Game.blocks.end_zones[i].draw(Game.ctx);
+        }
         for (var i = 0; i < Game.blocks.kill_zones.length; i++) {
             Game.blocks.kill_zones[i].draw(Game.ctx);
         }
-
+        for (var i = 0; i < Game.blocks.moving_kill_zones.length; i++) {
+            Game.blocks.moving_kill_zones[i].update();
+            Game.blocks.moving_kill_zones[i].draw(Game.ctx);
+        }
 
         for (var i = 0; i < Game.coins.length; i++) {
             Game.coins[i].animation.drawCurrentFrame(Game.ctx, Game.coins[i].x, Game.coins[i].y);
         }
+
+        Game.ctx.fillText("Deaths: " + Player.num_deaths, Game.canvas.width - 140, 25);
 
         Player.canComplete = true;
     }
