@@ -60,8 +60,9 @@ class GameObject {
      * @param {Number} heigth
      * @param {GameImage} img
      * @param {String} tag
+     * @param {GameAnimation} [animation]
      */
-    constructor(x, y, width, height, img, tag) {
+    constructor(x, y, width, height, img, tag, animation) {
         this.x = x;
         this.y = y;
         this.width = width;
@@ -69,11 +70,9 @@ class GameObject {
 
         this.tag = tag;
 
-        this.img = null;
+        this.img = img;
 
-        if (img != undefined) {
-            this.img = img;
-        }
+        this.animation = animation;
     }
 
     draw(ctx) {
@@ -105,44 +104,6 @@ class Level {
         return this.data[x][y];
     }
 }
-
-var Camera = {
-    x: 0,
-    y: 0,
-    width: 0,
-    height: 0,
-
-    speedX: 0,
-
-    follow_player: false,
-
-    isScrolling: false,
-
-    init() {
-        this.width = Game.canvas.width;
-        this.height = Game.canvas.height;
-
-        if (this.follow_player) {
-            this.isScrolling = true;
-        }
-    },
-
-    scroll(dx) {
-        this.speedX = dx;
-    },
-
-    stop() {
-        this.speedX = 0;
-    },
-
-    update() {
-        Player.x -= this.speedX;
-
-        for (var i = 0; i < Game.walls.length; i++) {
-            Game.walls[i].x -= this.speedX;
-        }
-    }
-};
 
 var KeyInputEvents = {
     keysPressed: [],
@@ -206,6 +167,8 @@ var Player = {
 
     idleCanPlay: true,
 
+    coins: 0,
+
     init: function() {
         if (!Game.first_load) {
             clearInterval(Player.animations.idle.animId);
@@ -247,6 +210,7 @@ var Player = {
         Player.canJump = false;
         Player.isGrounded = false;
         Player.isDead = false;
+        Player.first_load = false;
         Player.vel.y = 0;
     },
 
@@ -306,18 +270,33 @@ var Player = {
         Player.x += Player.vel.x;
         Player.y += Player.vel.y;
 
-        for (var i = 0; i < Game.walls.length; i++) {
-            if (Player.handleCollision(Game.walls[i])) {
-                if (Game.walls[i].tag == "Level Complete" && Player.canComplete) {
+        for (var i = 0; i < Game.blocks.kill_zones.length; i++) {
+            if (Player.collidesWith(Game.blocks.kill_zones[i])) {
+                Player.isDead = true;
+            }
+        }
+
+        for (var i = 0; i < Game.coins.length; i++) {
+            if (Player.collidesWith(Game.coins[i])) {
+                Game.coins.splice(i, 1);
+                Player.coins += 1;
+            }
+        }
+
+        for (var i = 0; i < Game.blocks.walls.length; i++) {
+            if (Player.handleCollision(Game.blocks.walls[i])) {
+                if (Game.blocks.walls[i].tag == "Level Complete" && Player.canComplete) {
                     if (Game.load_next_level() != null) {
                         Player.canComplete = false;
                         return;
                     }
                 }
-            } else {
-                
-            }
+            } else { }
         }
+
+        Game.ctx.font = "25px Arial";
+        Game.ctx.fillText("Coins: " + Player.coins, 10, 25);
+
 
         // Animations
         if (Player.vel.x > 0) {
@@ -343,6 +322,32 @@ var Player = {
 
     /**
      * returns true if collision with other is detected
+     * @param {GameObject} other 
+     */
+    collidesWith(other) {
+        // left
+        if (Player.x + Player.width > other.x && Player.y + Player.height > other.y && Player.y + 24 < other.y + other.height && Player.x + Player.width < other.x + 5) {
+            return true;
+        }
+
+        // right
+        else if (Player.x < other.x + other.width && Player.y + Player.height > other.y + 1 && Player.y + 24 < other.y + other.height && Player.x > other.x + other.width - 5)  {
+            return true;
+        }
+
+        // top
+        else if (Player.y + Player.height > other.y && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + 24 < other.y) {
+            return true;
+        }
+
+        // bottom
+        else if (Player.y + 24 < other.y + other.height && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + Player.height > other.y + other.height) {
+            return true;
+        }
+    },
+
+    /**
+     * returns true if collision with other is detected and handles the collision if necessary
      * @param {GameObject} other 
      */
     handleCollision: function(other) {
@@ -377,8 +382,6 @@ var Player = {
     }
 }
 
-
-// TODO split "walls" into different variables
 var Game = {
     canvas: null,
     ctx: null,
@@ -388,26 +391,39 @@ var Game = {
     tile_width: 64,
     tile_height: 64,
 
+    coins: [],
+    coinAnimId: null,
+
     images: [
         new GameImage("src/img/tile_grass.png"),
         new GameImage("src/img/tile_dirt.png"),
         new GameImage("src/img/tile_rock.png"),
         new GameImage("src/img/tile_level_complete.png"),
-        new GameImage("src/img/tile_level_start.png")
+        new GameImage("src/img/tile_level_start.png"),
+        new GameImage("src/img/tile_kill_zone.png")
     ],
 
     levels: [],
     current_level: 0,
 
-    walls: [],
+    // TODO implement this
+    blocks: {
+        walls: [],
+        start_zones: [],
+        end_zones: [],
+        kill_zones: []
+    },
 
     restart: function() {
-        Game.first_load = false;
         Player.reInit();
     },
 
     init: function() {
         window.onload = Game.start;
+    },
+
+    reInit: function() {
+        clearInterval(Game.coins[0].animId);
     },
 
     start: function() {
@@ -416,38 +432,50 @@ var Game = {
 
         Game.levels.push(new Level([
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 3, 0, 4],
-            [0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 3, 2],
-            [0, 0, 0, 0, 0, 0, 0, 3, 0, 3, 0, 3, 0, 0, 3],
-            [0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 3],
-            [0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 3, 3, 0, 0, 3],
+            [0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 6, 6, 6, 6, 6],
+            [0, 0, 0, 0, 0, 0, 0, 6, 0, 3, 3, 3, 3, 0, 4],
+            [0, 0, 0, 0, 0, 0, 6, 0, 3, 0, 0, 0, 0, 3, 2],
+            [0, 0, 0, 0, 0, 6, 0, 3, 0, 3, 0, 3, 0, 0, 3],
+            [0, 0, 0, 0, 0, 6, 0, 3, 0, 0, 0, 0, 0, 0, 3],
+            [0, 0, 0, 0, 0, 6, 0, 3, 0, 0, 3, 3, 0, 0, 3],
             [5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],
+            [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2],                
         ], 0));
 
         Game.levels.push(new Level([
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 6, 6, 6, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 6, 0, 0, 0, 6, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 3, 3, 0, 0, 0, 3, 3, 0, 0, 0, 4],
-            [5, 3, 3, 3, 3, 3, 0, 0, 0, 3, 3, 3, 3, 3, 1],                         
+            [0, 0, 0, 0, 3, 3, 0, 0, 0, 3, 0, 0, 0, 0, 4],
+            [5, 3, 3, 3, 3, 3, 0, 0, 0, 3, 3, 3, 3, 3, 3],                                     
         ], 1));
 
         Game.levels.push(new Level([
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 6, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 6, 0],
+            [0, 0, 0, 0, 0, 3, 3, 3, 3, 0, 0, 0, 0, 6, 0],
+            [0, 0, 0, 0, 0, 3, 0, 0, 3, 0, 0, 0, 0, 3, 0],
+            [0, 0, 0, 0, 0, 3, 0, 5, 3, 0, 0, 0, 3, 3, 0],
+            [4, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 3, 3, 0],
+            [3, 3, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],                
+        ], 2));
+
+        Game.levels.push(new Level([
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [4, 0, 0, 0, 0, 3, 3, 3, 3, 0, 0, 0, 0, 0, 3],
-            [3, 3, 0, 0, 0, 3, 0, 0, 3, 0, 0, 0, 0, 3, 3],
-            [0, 0, 0, 0, 0, 3, 0, 5, 3, 0, 0, 0, 3, 3, 3],
-            [0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 3, 3, 3],
-            [0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],         
+            [4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0],
+            [0, 0, 0, 7, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 7, 0, 0, 7, 0, 0, 7, 0, 0, 0, 0, 0],
+            [5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],                        
         ], 2));
 
         Game.load_next_level();
@@ -462,25 +490,44 @@ var Game = {
     load_next_level: function() {
         if (Game.current_level == Game.levels.length)
             return null;
-        Game.walls = [];
+        
+        Game.blocks.walls = [];
+        Game.blocks.kill_zones = [];
+        Game.coins = [];
         for (var y = 0; y < Game.levels[Game.current_level].data.length; y++) {
             for (var x = 0; x < Game.levels[Game.current_level].data[Game.current_level].length; x++) {
                 if (Game.levels[Game.current_level].data[y][x] == 1) {
-                    Game.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[0]));
+                    Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[0]));
                 }
                 if (Game.levels[Game.current_level].data[y][x] == 2) {
-                    Game.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[1]));
+                    Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[1]));
                 }
                 if (Game.levels[Game.current_level].data[y][x] == 3) {
-                    Game.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[2]));
+                    Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[2]));
                 }
                 if (Game.levels[Game.current_level].data[y][x] == 4) {
-                    Game.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[3], "Level Complete"));
+                    Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[3], "Level Complete"));
                 }
                 if (Game.levels[Game.current_level].data[y][x] == 5) {
-                    Game.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[4]));
+                    Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[4]));
                     Player.spawnX = x*Game.tile_width;
                     Player.spawnY = y*Game.tile_height - Player.height;
+                }
+                if (Game.levels[Game.current_level].data[y][x] == 6) {
+                    Game.coins.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, null, null, new GameAnimation("src/anim/anim_coin.png", 4, 4, Game.tile_width, Game.tile_height)));
+                    if (Game.coinAnimId == null) {
+                        clearInterval(Game.coinAnimId);
+                        Game.coinAnimId = setInterval(function() {
+                            for (var i = 0; i< Game.coins.length; i++) {
+                                Game.coins[i].animation.isPlaying = true;
+                                Game.coins[i].animation.update();
+                                Game.coins[i].animation.play();
+                            }
+                        }, 1000/Game.coins[0].animation.fps);
+                    }
+                }
+                if (Game.levels[Game.current_level].data[y][x] == 7) {
+                    Game.blocks.kill_zones.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[5], "Dead Zone"));
                 }
             }
         }
@@ -501,8 +548,16 @@ var Game = {
 
         Player.update();
 
-        for (var i = 0; i < Game.walls.length; i++) {
-            Game.walls[i].draw(Game.ctx);
+        for (var i = 0; i < Game.blocks.walls.length; i++) {
+            Game.blocks.walls[i].draw(Game.ctx);
+        }
+        for (var i = 0; i < Game.blocks.kill_zones.length; i++) {
+            Game.blocks.kill_zones[i].draw(Game.ctx);
+        }
+
+
+        for (var i = 0; i < Game.coins.length; i++) {
+            Game.coins[i].animation.drawCurrentFrame(Game.ctx, Game.coins[i].x, Game.coins[i].y);
         }
 
         Player.canComplete = true;
