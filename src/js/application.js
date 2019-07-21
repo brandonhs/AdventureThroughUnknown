@@ -1,3 +1,11 @@
+/**
+ *   ########
+ *  #        #
+ * # # #      #
+ * #          #
+ * #  ##      #
+ */
+
 class GameAnimation {
     constructor(src, num_frames, fps, sprite_width, sprite_height) {
         this.num_frames = num_frames;
@@ -111,6 +119,11 @@ class GameMovingPlatform {
             y: offsetY
         }
 
+        this.vel = {
+            x: 0,
+            y: 0
+        };
+
         this.img = img;
 
         this.isUp = true;
@@ -118,19 +131,23 @@ class GameMovingPlatform {
     }
 
     update() {
+        this.vel.x = 0;
+
         if (this.isRight) {
-            this.x += this.speed.x;
+            this.vel.x = this.speed.x;
             if (this.x > this.start.x + this.offset.x) {
                 this.x = this.offset.x + this.start.x;
                 this.isRight = false;
             }
         } else {
-            this.x -= this.speed.x;
+            this.vel.x = -this.speed.x;
             if (this.x < this.start.x) {
                 this.x = this.start.x;
                 this.isRight = true;
             }
         }
+
+        this.x += this.vel.x;
     }
 
     draw(ctx) {
@@ -304,9 +321,6 @@ var Player = {
         if (!KeyInputEvents.keysPressed[38]) {
             if (Player.isGrounded) {
                 Player.canJump = true;
-            } else if (Player.vel.y < 0) {
-                // TODO jump stops abruptly fix this
-                //! Player.isJumping = false;
             }
         }
 
@@ -352,6 +366,11 @@ var Player = {
                     return;
                 }
             }
+        }
+
+        //? collision meh with moving platforms
+        for (var i = 0; i < Game.blocks.moving_platforms.length; i++) {
+            if (Player.handleMovingCollsion(Game.blocks.moving_platforms[i])) { } else {}
         }
 
         for (var i = 0; i < Game.blocks.start_zones.length; i++) {
@@ -447,6 +466,42 @@ var Player = {
             Player.vel.y = 0;
             return true;
         }
+    },
+
+    /**
+     * returns true if collision with other is detected and handles the collision if necessary
+     * @param {GameObject} other 
+     */
+    handleMovingCollsion: function(other) {
+        // left
+        if (Player.x + Player.width > other.x && Player.y + Player.height > other.y && Player.y + 24 < other.y + other.height && Player.x + Player.width < other.x + 9) {
+            Player.x = other.x - Player.width;
+            return true;
+        }
+
+        // right
+        else if (Player.x < other.x + other.width && Player.y + Player.height > other.y + 2 && Player.y + 24 < other.y + other.height && Player.x > other.x + other.width - 9)  {
+            Player.x = other.x + other.width;
+            return true;
+        }
+
+        // top
+        else if (Player.y + Player.height > other.y && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + 24 < other.y) {
+            Player.y = other.y - Player.height;
+            Player.vel.y = 0;
+            Player.x += other.vel.x;
+            Player.isJumping = false;
+            Player.isGrounded = true;
+            return true;
+        }
+
+        // bottom
+        else if (Player.y + 24 < other.y + other.height && Player.x + Player.width > other.x && Player.x < other.x + other.width && Player.y + Player.height > other.y + other.height) {
+            Player.y = other.y + other.height - 24;
+            Player.isJumping = false;
+            Player.vel.y = 0;
+            return true;
+        }
     }
 }
 
@@ -479,7 +534,8 @@ var Game = {
         start_zones: [],
         end_zones: [],
         kill_zones: [],
-        moving_kill_zones: []
+        moving_kill_zones: [],
+        moving_platforms: []
     },
 
     restart: function() {
@@ -541,9 +597,21 @@ var Game = {
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0],
-            [0, 0, 0, 7, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 7, 0, 0, 7, 0, 0, {offset: {x: 100, y: 0}, speed: {x: 1, y: 0}, id: 8}, 0, 0, 0, 0, 0],
+            [0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 7, 0, 0, 7, 0, 0, {offset: {x: 100, y: 0}, speed: {x: 1.25, y: 0}, id: 0}, 0, 0, 0, 0, 0],
             [5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],                        
+        ], 2));
+
+        Game.levels.push(new Level([
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4],
+            [5, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 3],                               
         ], 2));
 
         Game.load_next_level();
@@ -555,6 +623,11 @@ var Game = {
         Game.loop();
     },
 
+    load_level : function(level) {
+        Game.current_level = level;
+        Game.load_next_level();
+    },
+
     load_next_level: function() {
         if (Game.current_level == Game.levels.length)
             return null;
@@ -564,6 +637,9 @@ var Game = {
         Game.blocks.end_zones = [];
         Game.blocks.start_zones = [];
         Game.coins = [];
+        Game.blocks.moving_kill_zones = [];
+        Game.blocks.moving_platforms = [];
+
         for (var y = 0; y < Game.levels[Game.current_level].data.length; y++) {
             for (var x = 0; x < Game.levels[Game.current_level].data[Game.current_level].length; x++) {
                 if (typeof Game.levels[Game.current_level].data[y][x] == 'number') {
@@ -585,7 +661,7 @@ var Game = {
                         Player.spawnY = y*Game.tile_height - Player.height;
                     }
                     if (Game.levels[Game.current_level].data[y][x] == 6) {
-                        Game.coins.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, null, null, new GameAnimation("src/anim/anim_coin.png", 4, 4, Game.tile_width, Game.tile_height)));
+                        Game.coins.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, null, null, new GameAnimation("src/anim/anim_coin.png", 4, 6, Game.tile_width, Game.tile_height)));
                         if (Game.coinAnimId == null) {
                             clearInterval(Game.coinAnimId);
                             Game.coinAnimId = setInterval(function() {
@@ -604,8 +680,11 @@ var Game = {
                         Game.blocks.moving_kill_zones.push(new GameMovingPlatform(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[5], 1, 0, 100, 0));
                     }
                 } else if (typeof Game.levels[Game.current_level].data[y][x] == 'object') {
-                    if (Game.levels[Game.current_level].data[y][x].id == 8) {
+                    if (Game.levels[Game.current_level].data[y][x].id == 0) {
                         Game.blocks.moving_kill_zones.push(new GameMovingPlatform(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[5], Game.levels[Game.current_level].data[y][x].speed.x, Game.levels[Game.current_level].data[y][x].y, Game.levels[Game.current_level].data[y][x].offset.x, Game.levels[Game.current_level].data[y][x].offset.y));
+                    }
+                    if (Game.levels[Game.current_level].data[y][x].id == 1) {
+                        Game.blocks.moving_platforms.push(new GameMovingPlatform(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[Game.levels[Game.current_level].data[y][x].imageID], Game.levels[Game.current_level].data[y][x].speed.x, Game.levels[Game.current_level].data[y][x].y, Game.levels[Game.current_level].data[y][x].offset.x, Game.levels[Game.current_level].data[y][x].offset.y));
                     }
                 }
             }
@@ -626,8 +705,6 @@ var Game = {
 
         Game.ctx.clearRect(0, 0, Game.canvas.width, Game.canvas.height);
 
-        Player.update();
-
         for (var i = 0; i < Game.blocks.walls.length; i++) {
             Game.blocks.walls[i].draw(Game.ctx);
         }
@@ -644,10 +721,16 @@ var Game = {
             Game.blocks.moving_kill_zones[i].update();
             Game.blocks.moving_kill_zones[i].draw(Game.ctx);
         }
+        for (var i = 0; i < Game.blocks.moving_platforms.length; i++) {
+            Game.blocks.moving_platforms[i].update();
+            Game.blocks.moving_platforms[i].draw(Game.ctx);
+        }
 
         for (var i = 0; i < Game.coins.length; i++) {
             Game.coins[i].animation.drawCurrentFrame(Game.ctx, Game.coins[i].x, Game.coins[i].y);
         }
+
+        Player.update();
 
         Game.ctx.fillText("Deaths: " + Player.num_deaths, Game.canvas.width - 140, 25);
 
