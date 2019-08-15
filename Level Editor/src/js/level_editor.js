@@ -110,6 +110,10 @@ canvas.addEventListener('mouseout', function() {
     mouse.oncanvas = false;
 });
 
+function createMovingPlatform(x, y, offsetX, offsetY, speedX, speedY, id, image, axis) {
+    level.data[y][x] = "{offset: {x: " + offsetX + ", y: " + offsetY + "}, speed: {x: " + speedX + ", y: " + speedY  + "}, id: " + id  + ", image: " + image + ", axis: " + axis + "}";
+}
+
 function submit() {
     var output = document.getElementById("output");
     output.value = "";
@@ -189,7 +193,16 @@ function loop() {
 
     for (var y = 0; y < level.data.length; y++) {
         for (var x = 0; x < level.data[0].length; x++) {
-            if (level.data[y][x] == 1) {
+            if (typeof level.data[y][x] == 'string') {
+                if (mouse.erasing && Math.floor(mouse.y/64) == y && Math.floor(mouse.x/64) == x) {
+                    ctx.fillStyle = "rgba(255, 0, 0, 0.25)";
+                } else {
+                    ctx.fillStyle = "rgba(0, 0, 0, 1)";
+                }
+
+                ctx.fillRect(x*64, y*64, 64, 64);
+            }
+            else if (level.data[y][x] == 1) {
                 if (mouse.erasing && Math.floor(mouse.y/64) == y && Math.floor(mouse.x/64) == x) {
                     ctx.fillStyle = "rgba(255, 0, 0, 0.25)";
                     ctx.fillRect(x*64, y*64, 64, 64);

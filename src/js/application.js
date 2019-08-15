@@ -101,7 +101,7 @@ class GameMovingPlatform {
      * @param {GameImage} img
      * @param {Number} speed
      */
-    constructor(x, y, width, height, img, speedX, speedY, offsetX, offsetY) {
+    constructor(x, y, width, height, img, speedX, speedY, offsetX, offsetY, axis) {
         this.x = x;
         this.y = y;
         this.start = {
@@ -128,26 +128,45 @@ class GameMovingPlatform {
 
         this.isUp = true;
         this.isRight = true;
+
+        this.axis = axis;
     }
 
     update() {
         this.vel.x = 0;
+        this.vel.y = 0;
 
-        if (this.isRight) {
-            this.vel.x = this.speed.x;
-            if (this.x > this.start.x + this.offset.x) {
-                this.x = this.offset.x + this.start.x;
-                this.isRight = false;
+        if (this.axis == 0) {
+            if (this.isUp) {
+                this.vel.y = -this.speed.y;
+                if (this.y < this.start.y - this.offset.y) {
+                    this.y = this.start.y - this.offset.y;
+                    this.isUp = false;
+                }
+            } else {
+                this.vel.y = this.speed.y;
+                if (this.y > this.start.y) {
+                    this.y = this.start.y;
+                    this.isUp = true;
+                }
             }
+            this.y += this.vel.y;
         } else {
-            this.vel.x = -this.speed.x;
-            if (this.x < this.start.x) {
-                this.x = this.start.x;
-                this.isRight = true;
+            if (this.isRight) {
+                this.vel.x = this.speed.x;
+                if (this.x > this.start.x + this.offset.x) {
+                    this.x = this.offset.x + this.start.x;
+                    this.isRight = false;
+                }
+            } else {
+                this.vel.x = -this.speed.x;
+                if (this.x < this.start.x) {
+                    this.x = this.start.x;
+                    this.isRight = true;
+                }
             }
+            this.x += this.vel.x;
         }
-
-        this.x += this.vel.x;
     }
 
     draw(ctx) {
@@ -365,7 +384,7 @@ var Player = {
                     Player.canComplete = false;
                     return;
                 }
-            }
+            } else {}
         }
 
         //? collision meh with moving platforms
@@ -538,6 +557,8 @@ var Game = {
         moving_platforms: []
     },
 
+    finished: false,
+
     restart: function() {
         Player.reInit();
     },
@@ -598,9 +619,9 @@ var Game = {
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0],
             [0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 7, 0, 0, 7, 0, 0, {offset: {x: 100, y: 0}, speed: {x: 1.25, y: 0}, id: 0}, 0, 0, 0, 0, 0],
+            [0, 0, 0, 7, 0, 0, 7, 0, 0, {offset: {x: 0, y: 50}, speed: {x: 0, y: 1.25}, id: 0, axis: 0}, 0, 0, 0, 0, 0],
             [5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],                        
-        ], 2));
+        ], 3));
 
         Game.levels.push(new Level([
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -611,8 +632,68 @@ var Game = {
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4],
-            [5, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 3],                               
-        ], 2));
+            [5, 3, 0, {offset: {x: 64*3, y: 0}, speed: {x: 2, y: 0}, id: 1, imageID: 2, axis: 1}, 0, 0, 0, 0, {offset: {x: 64*3, y: 0}, speed: {x: 1.0, y: 0}, id: 1, imageID: 2, axis: 1}, 0, 0, 0, 0, 3, 3],                               
+        ], 4));
+
+        Game.levels.push(new Level([
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 4, 1, 0, 0, {offset: {x: 256, y: 0}, speed: {x: 1.65, y: 0}, id: 1, imageID: 2, axis: 1}, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {offset: {x: 128, y: 0}, speed: {x: 0.5, y: 0}, id: 1, imageID: 2, axis: 1}, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, {offset: {x: 256, y: 0}, speed: {x: 1.25, y: 0}, id: 1, imageID: 2, axis: 1}, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, {offset: {x: 256, y: 0}, speed: {x: 1.25, y: 0}, id: 1, imageID: 2, axis: 1}, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [5, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],                                      
+        ], 5));
+
+        Game.levels.push(new Level([
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 3, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 3, 4, 3, 0, 0, 0, 0, 0, 0, 3],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 3, 0, 0, 0, 0],
+            [7, 7, 7, 7, 7, 3, 5, 3, 7, 7, 7, 7, 7, 7, 7],                                       
+        ], 6));
+
+        Game.levels.push(new Level([
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 6, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 6, 0, 1, 1, 1, 1, 3, 0, 0, 0, 0],
+            [0, 0, 0, 1, 1, 1, 2, 2, 2, 2, 3, 7, 0, 0, 4],
+            [1, 5, 1, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 1],                                               
+        ], 7));
+
+        Game.levels.push(new Level([
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 4],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 3],
+            [0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0],
+            [0, 0, 0, {offset: {x: 0, y: 100}, speed: {x: 0, y: 2.25}, id: 0, imageID: null, axis: 0}, 0, 0, {offset: {x: 0, y: 95}, speed: {x: 0, y: 2.25}, id: 0, imageID: null, axis: 0}, 0, 0, {offset: {x: 0, y: 125}, speed: {x: 0, y: 3.25}, id: 0, imageID: null, axis: 0}, 0, 0, 0, 0, 0],
+            [5, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],                                                        
+        ], 8));
+
+        Game.levels.push(new Level([
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 6, 6, 6, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 6, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 4],
+            [0, 0, 0, 6, 0, 7, 0, 6, 0, 0, 0, 0, 0, 0, 3],
+            [5, 2, 2, 2, 7, 7, 2, 2, 2, 2, 7, 7, 2, 3, 3],                                                               
+        ], 9));
 
         Game.load_next_level();
 
@@ -629,8 +710,11 @@ var Game = {
     },
 
     load_next_level: function() {
-        if (Game.current_level == Game.levels.length)
+        if (Game.current_level == Game.levels.length) {
+            Game.ctx.fillText("Thanks for playing Adventure Through the Unknown Beta! More levels coming extremely soon! Be sure to check frequently.", 0, Game.canvas.height / 2, Game.canvas.width);
+            Game.finished = true;
             return null;
+        }
         
         Game.blocks.walls = [];
         Game.blocks.kill_zones = [];
@@ -641,7 +725,7 @@ var Game = {
         Game.blocks.moving_platforms = [];
 
         for (var y = 0; y < Game.levels[Game.current_level].data.length; y++) {
-            for (var x = 0; x < Game.levels[Game.current_level].data[Game.current_level].length; x++) {
+            for (var x = 0; x < Game.levels[Game.current_level].data[0].length; x++) {
                 if (typeof Game.levels[Game.current_level].data[y][x] == 'number') {
                     if (Game.levels[Game.current_level].data[y][x] == 1) {
                         Game.blocks.walls.push(new GameObject(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[0]));
@@ -681,10 +765,10 @@ var Game = {
                     }
                 } else if (typeof Game.levels[Game.current_level].data[y][x] == 'object') {
                     if (Game.levels[Game.current_level].data[y][x].id == 0) {
-                        Game.blocks.moving_kill_zones.push(new GameMovingPlatform(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[5], Game.levels[Game.current_level].data[y][x].speed.x, Game.levels[Game.current_level].data[y][x].y, Game.levels[Game.current_level].data[y][x].offset.x, Game.levels[Game.current_level].data[y][x].offset.y));
+                        Game.blocks.moving_kill_zones.push(new GameMovingPlatform(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[5], Game.levels[Game.current_level].data[y][x].speed.x, Game.levels[Game.current_level].data[y][x].speed.y, Game.levels[Game.current_level].data[y][x].offset.x, Game.levels[Game.current_level].data[y][x].offset.y, Game.levels[Game.current_level].data[y][x].axis));
                     }
                     if (Game.levels[Game.current_level].data[y][x].id == 1) {
-                        Game.blocks.moving_platforms.push(new GameMovingPlatform(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[Game.levels[Game.current_level].data[y][x].imageID], Game.levels[Game.current_level].data[y][x].speed.x, Game.levels[Game.current_level].data[y][x].y, Game.levels[Game.current_level].data[y][x].offset.x, Game.levels[Game.current_level].data[y][x].offset.y));
+                        Game.blocks.moving_platforms.push(new GameMovingPlatform(x*Game.tile_width, y*Game.tile_height, Game.tile_width, Game.tile_height, Game.images[Game.levels[Game.current_level].data[y][x].imageID], Game.levels[Game.current_level].data[y][x].speed.x, Game.levels[Game.current_level].data[y][x].speed.y, Game.levels[Game.current_level].data[y][x].offset.x, Game.levels[Game.current_level].data[y][x].offset.y, Game.levels[Game.current_level].data[y][x].axis));
                     }
                 }
             }
@@ -701,7 +785,8 @@ var Game = {
             Game.restart();
         }
 
-        requestAnimationFrame(Game.loop);
+        if (!Game.finished)
+            requestAnimationFrame(Game.loop);
 
         Game.ctx.clearRect(0, 0, Game.canvas.width, Game.canvas.height);
 
