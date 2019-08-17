@@ -210,6 +210,20 @@ var KeyInputEvents = {
     }
 }
 
+var TouchInputEvents = {
+    touches: [],
+    x: 0, y: 0,
+
+    init: function() {
+        function inputHandler(e) {
+            TouchInputEvents.touches = e.touches;
+        }
+
+        document.addEventListener("touchstart", inputHandler);
+        document.addEventListener("touchmove", inputHandler);
+    }
+}
+
 var Player = {
     x: 0,
     y: 0,
@@ -358,6 +372,9 @@ var Player = {
         // Movement Update
         Player.x += Player.vel.x;
         Player.y += Player.vel.y;
+
+        if (Player.x < 0) Player.x = 0;
+        if (Player.x + Player.width > Game.canvas.width) Player.x = Game.canvas.width - Player.width;
 
         for (var i = 0; i < Game.blocks.kill_zones.length; i++) {
             if (Player.collidesWith(Game.blocks.kill_zones[i])) {
@@ -650,13 +667,13 @@ var Game = {
         Game.levels.push(new Level([
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 3, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 3, 4, 3, 0, 0, 0, 0, 0, 0, 3],
+            [0, 0, 0, 3, 4, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 3],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0],
             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [0, 0, 0, 0, 3, 0, 0, 0, 3, 0, 3, 0, 0, 0, 0],
-            [7, 7, 7, 7, 7, 3, 5, 3, 7, 7, 7, 7, 7, 7, 7],                                       
+            [7, 7, 7, 7, 3, 3, 5, 3, 3, 7, 7, 7, 7, 7, 7],                                       
         ], 6));
 
         Game.levels.push(new Level([
